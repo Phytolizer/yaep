@@ -74,4 +74,6 @@ struct grammar
     YaepAllocator* alloc;
 };
 
+void yaep_error(int code, const char* format, ...);
+
 #endif // __YAEP_INTERNAL__

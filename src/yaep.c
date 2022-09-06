@@ -134,9 +134,6 @@ static void (*syntax_error)(int err_tok_num,
 static void* (*parse_alloc)(int nmemb);
 static void (*parse_free)(void* mem);
 
-/* Forward decrlarations: */
-static void yaep_error(int code, const char* format, ...);
-
 #ifndef __cplusplus
 extern
 #else
@@ -2699,7 +2696,7 @@ jmp_buf yaep_error_longjump_buff;
 /* The following function stores error CODE and MESSAGE.  The function
    makes long jump after that.  So the function is designed to process
    only one error. */
-static void yaep_error(int code, const char* format, ...)
+void yaep_error(int code, const char* format, ...)
 {
     va_list arguments;
 
