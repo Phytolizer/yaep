@@ -49,35 +49,35 @@
 
 */
 
-#include "allocate.h"
 #include "hashtab.h"
+
+#include "allocate.h"
 
 #include <assert.h>
 
 /* This macro defines reserved value for empty table entry. */
 
-#define EMPTY_ENTRY    NULL
+#define EMPTY_ENTRY NULL
 
 /* This macro defines reserved value for table entry which contained
    a deleted element. */
 
-#define DELETED_ENTRY  ((void *) 1)
+#define DELETED_ENTRY ((void*)1)
 
 /* The following function returns the nearest prime number which is
    greater than given source number. */
 
-static unsigned long
-higher_prime_number (unsigned long number)
+static unsigned long higher_prime_number(unsigned long number)
 {
-  unsigned long i;
+    unsigned long i;
 
-  for (number = (number / 2) * 2 + 3;; number += 2)
+    for (number = (number / 2) * 2 + 3;; number += 2)
     {
-      for (i = 3; i * i <= number; i += 2)
-	if (number % i == 0)
-	  break;
-      if (i * i > number)
-	return number;
+        for (i = 3; i * i <= number; i += 2)
+            if (number % i == 0)
+                break;
+        if (i * i > number)
+            return number;
     }
 }
 
@@ -86,58 +86,52 @@ higher_prime_number (unsigned long number)
    hash table entries are EMPTY_ENTRY).  The function returns the
    created hash table. */
 
-hash_table_t
-create_hash_table (YaepAllocator * allocator, size_t size,
-		   unsigned int (*hash_function) (hash_table_entry_t el_ptr),
-		   int (*eq_function) (hash_table_entry_t el1_ptr,
-				       hash_table_entry_t el2_ptr))
+hash_table_t create_hash_table(YaepAllocator* allocator,
+    size_t size,
+    unsigned int (*hash_function)(hash_table_entry_t el_ptr),
+    int (*eq_function)(hash_table_entry_t el1_ptr, hash_table_entry_t el2_ptr))
 {
-  hash_table_t result;
-  hash_table_entry_t *entry_ptr;
+    hash_table_t result;
+    hash_table_entry_t* entry_ptr;
 
-  size = higher_prime_number (size);
-  result = yaep_malloc (allocator, sizeof (*result));
-  result->entries =
-    yaep_malloc (allocator, size * sizeof (hash_table_entry_t));
-  result->size = size;
-  result->hash_function = hash_function;
-  result->eq_function = eq_function;
-  result->number_of_elements = 0;
-  result->number_of_deleted_elements = 0;
-  result->searches = 0;
-  result->collisions = 0;
-  result->alloc = allocator;
-  for (entry_ptr = result->entries;
-       entry_ptr < result->entries + size; entry_ptr++)
-    *entry_ptr = EMPTY_ENTRY;
-  return result;
+    size = higher_prime_number(size);
+    result = yaep_malloc(allocator, sizeof(*result));
+    result->entries = yaep_malloc(allocator, size * sizeof(hash_table_entry_t));
+    result->size = size;
+    result->hash_function = hash_function;
+    result->eq_function = eq_function;
+    result->number_of_elements = 0;
+    result->number_of_deleted_elements = 0;
+    result->searches = 0;
+    result->collisions = 0;
+    result->alloc = allocator;
+    for (entry_ptr = result->entries; entry_ptr < result->entries + size; entry_ptr++)
+        *entry_ptr = EMPTY_ENTRY;
+    return result;
 }
 
 /* This function makes the table empty.  Naturally the hash table must
    already exist. */
 
-void
-empty_hash_table (hash_table_t htab)
+void empty_hash_table(hash_table_t htab)
 {
-  hash_table_entry_t *entry_ptr;
+    hash_table_entry_t* entry_ptr;
 
-  assert (htab != NULL);
-  htab->number_of_elements = 0;
-  htab->number_of_deleted_elements = 0;
-  for (entry_ptr = htab->entries;
-       entry_ptr < htab->entries + htab->size; entry_ptr++)
-    *entry_ptr = EMPTY_ENTRY;
+    assert(htab != NULL);
+    htab->number_of_elements = 0;
+    htab->number_of_deleted_elements = 0;
+    for (entry_ptr = htab->entries; entry_ptr < htab->entries + htab->size; entry_ptr++)
+        *entry_ptr = EMPTY_ENTRY;
 }
 
 /* This function frees all memory allocated for given hash table.
    Naturally the hash table must already exist. */
 
-void
-delete_hash_table (hash_table_t htab)
+void delete_hash_table(hash_table_t htab)
 {
-  assert (htab != NULL);
-  yaep_free (htab->alloc, htab->entries);
-  yaep_free (htab->alloc, htab);
+    assert(htab != NULL);
+    yaep_free(htab->alloc, htab->entries);
+    yaep_free(htab->alloc, htab);
 }
 
 /* The following function changes size of memory allocated for the
@@ -146,29 +140,24 @@ delete_hash_table (hash_table_t htab)
    table must already exist.  Remember also that the place of the
    table entries is changed. */
 
-static void
-expand_hash_table (hash_table_t htab)
+static void expand_hash_table(hash_table_t htab)
 {
-  hash_table_t new_htab;
-  hash_table_entry_t *entry_ptr;
-  hash_table_entry_t *new_entry_ptr;
+    hash_table_t new_htab;
+    hash_table_entry_t* entry_ptr;
+    hash_table_entry_t* new_entry_ptr;
 
-  assert (htab != NULL);
-  new_htab =
-    create_hash_table (htab->alloc, htab->number_of_elements * 2,
-		       htab->hash_function, htab->eq_function);
-  for (entry_ptr = htab->entries; entry_ptr < htab->entries + htab->size;
-       entry_ptr++)
-    if (*entry_ptr != EMPTY_ENTRY && *entry_ptr != DELETED_ENTRY)
-      {
-	new_entry_ptr = find_hash_table_entry (new_htab, *entry_ptr,
-					       1 /* TRUE */ );
-	assert (*new_entry_ptr == EMPTY_ENTRY);
-	*new_entry_ptr = (*entry_ptr);
-      }
-  yaep_free (htab->alloc, htab->entries);
-  *htab = (*new_htab);
-  yaep_free (new_htab->alloc, new_htab);
+    assert(htab != NULL);
+    new_htab = create_hash_table(htab->alloc, htab->number_of_elements * 2, htab->hash_function, htab->eq_function);
+    for (entry_ptr = htab->entries; entry_ptr < htab->entries + htab->size; entry_ptr++)
+        if (*entry_ptr != EMPTY_ENTRY && *entry_ptr != DELETED_ENTRY)
+        {
+            new_entry_ptr = find_hash_table_entry(new_htab, *entry_ptr, 1 /* TRUE */);
+            assert(*new_entry_ptr == EMPTY_ENTRY);
+            *new_entry_ptr = (*entry_ptr);
+        }
+    yaep_free(htab->alloc, htab->entries);
+    *htab = (*new_htab);
+    yaep_free(new_htab->alloc, new_htab);
 }
 
 /* The following variable is used for debugging. Its value is number
@@ -193,51 +182,49 @@ int all_collisions = 0;
    into the table entry before another call of
    `find_hash_table_entry'. */
 
-hash_table_entry_t *
-find_hash_table_entry (hash_table_t htab,
-		       hash_table_entry_t element, int reserve)
+hash_table_entry_t* find_hash_table_entry(hash_table_t htab, hash_table_entry_t element, int reserve)
 {
-  hash_table_entry_t *entry_ptr;
-  hash_table_entry_t *first_deleted_entry_ptr;
-  unsigned hash_value, secondary_hash_value;
+    hash_table_entry_t* entry_ptr;
+    hash_table_entry_t* first_deleted_entry_ptr;
+    unsigned hash_value, secondary_hash_value;
 
-  assert (htab != NULL);
-  if (htab->size / 4 <= htab->number_of_elements / 3)
-    expand_hash_table (htab);
-  hash_value = (*htab->hash_function) (element);
-  secondary_hash_value = 1 + hash_value % (htab->size - 2);
-  hash_value %= htab->size;
-  htab->searches++;
-  all_searches++;
-  first_deleted_entry_ptr = NULL;
-  for (;; htab->collisions++, all_collisions++)
+    assert(htab != NULL);
+    if (htab->size / 4 <= htab->number_of_elements / 3)
+        expand_hash_table(htab);
+    hash_value = (*htab->hash_function)(element);
+    secondary_hash_value = 1 + hash_value % (htab->size - 2);
+    hash_value %= htab->size;
+    htab->searches++;
+    all_searches++;
+    first_deleted_entry_ptr = NULL;
+    for (;; htab->collisions++, all_collisions++)
     {
-      entry_ptr = htab->entries + hash_value;
-      if (*entry_ptr == EMPTY_ENTRY)
-	{
-	  if (reserve)
-	    {
-	      htab->number_of_elements++;
-	      if (first_deleted_entry_ptr != NULL)
-		{
-		  entry_ptr = first_deleted_entry_ptr;
-		  *entry_ptr = EMPTY_ENTRY;
-		}
-	    }
-	  break;
-	}
-      else if (*entry_ptr != DELETED_ENTRY)
-	{
-	  if ((*htab->eq_function) (*entry_ptr, element))
-	    break;
-	}
-      else if (first_deleted_entry_ptr == NULL)
-	first_deleted_entry_ptr = entry_ptr;
-      hash_value += secondary_hash_value;
-      if (hash_value >= htab->size)
-	hash_value -= htab->size;
+        entry_ptr = htab->entries + hash_value;
+        if (*entry_ptr == EMPTY_ENTRY)
+        {
+            if (reserve)
+            {
+                htab->number_of_elements++;
+                if (first_deleted_entry_ptr != NULL)
+                {
+                    entry_ptr = first_deleted_entry_ptr;
+                    *entry_ptr = EMPTY_ENTRY;
+                }
+            }
+            break;
+        }
+        else if (*entry_ptr != DELETED_ENTRY)
+        {
+            if ((*htab->eq_function)(*entry_ptr, element))
+                break;
+        }
+        else if (first_deleted_entry_ptr == NULL)
+            first_deleted_entry_ptr = entry_ptr;
+        hash_value += secondary_hash_value;
+        if (hash_value >= htab->size)
+            hash_value -= htab->size;
     }
-  return entry_ptr;
+    return entry_ptr;
 }
 
 /* This function deletes element with given value from hash table.
@@ -245,34 +232,30 @@ find_hash_table_entry (hash_table_t htab,
    function call.  Naturally the hash table must already exist.  Hash
    table entry for given value should be not empty (or deleted). */
 
-void
-remove_element_from_hash_table_entry (hash_table_t htab,
-				      hash_table_entry_t element)
+void remove_element_from_hash_table_entry(hash_table_t htab, hash_table_entry_t element)
 {
-  hash_table_entry_t *entry_ptr;
+    hash_table_entry_t* entry_ptr;
 
-  assert (htab != NULL);
-  entry_ptr = find_hash_table_entry (htab, element, 0);
-  assert (*entry_ptr != EMPTY_ENTRY && *entry_ptr != DELETED_ENTRY);
-  *entry_ptr = DELETED_ENTRY;
-  htab->number_of_deleted_elements++;
+    assert(htab != NULL);
+    entry_ptr = find_hash_table_entry(htab, element, 0);
+    assert(*entry_ptr != EMPTY_ENTRY && *entry_ptr != DELETED_ENTRY);
+    *entry_ptr = DELETED_ENTRY;
+    htab->number_of_deleted_elements++;
 }
 
 /* The following function returns current size of given hash table. */
 
-size_t
-hash_table_size (hash_table_t htab)
+size_t hash_table_size(hash_table_t htab)
 {
-  assert (htab != NULL);
-  return htab->size;
+    assert(htab != NULL);
+    return htab->size;
 }
 
 /* The following function returns current number of elements in given
    hash table. */
 
-size_t
-hash_table_elements_number (hash_table_t htab)
+size_t hash_table_elements_number(hash_table_t htab)
 {
-  assert (htab != NULL);
-  return htab->number_of_elements - htab->number_of_deleted_elements;
+    assert(htab != NULL);
+    return htab->number_of_elements - htab->number_of_deleted_elements;
 }
