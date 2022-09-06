@@ -3424,8 +3424,6 @@ yaep_read_grammar (struct grammar *g, int strict_p,
   return 0;
 }
 
-#include "sgramm.h"
-
 /* The following functions set up parameter which affect parser work
    and return the previous parameter value. */
 
