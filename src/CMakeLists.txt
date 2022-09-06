@@ -27,7 +27,6 @@ bison_target( sgramm sgramm.y ${CMAKE_CURRENT_BINARY_DIR}/sgramm.c )
 if( NOT ${BISON_sgramm_DEFINED} )
 	message( FATAL_ERROR "Failed to add rule for sgramm.c" )
 endif()
-add_custom_target( sgramm_c DEPENDS ${BISON_sgramm_OUTPUTS} ) # FIXME: yaep.c includes sgramm.c directly, so we need a custom target
 
 # Now build libraries
 
@@ -44,13 +43,14 @@ set( YAEP_LIB_SOURCES
 	objstack.c
 	vlobject.c
 	yaep.c
+	${BISON_sgramm_OUTPUTS}
 )
 add_library( yaep_static STATIC ${YAEP_LIB_SOURCES} )
-add_dependencies( yaep_static sgramm_c ) # FIXME: yaep.c includes sgramm.c directly; would be cleaner if sgramm was its own object
 set_target_properties( yaep_static PROPERTIES OUTPUT_NAME ${YAEP_LIB_STATIC} )
 target_include_directories(
-	yaep_static PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+	yaep_static PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/yaep_internal
 )
+target_include_directories( yaep_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
 
 # Install
 set( YAEP_INCLUDE

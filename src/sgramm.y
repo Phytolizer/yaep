@@ -34,6 +34,7 @@
 #include <ctype.h>
 
 #include <assert.h>
+#include <setjmp.h>
 
 /* The following is necessary if we use YAEP with byacc/bison/msta
    parser. */
@@ -87,6 +88,15 @@ struct srule
   int *trans;
 };
 
+#include "vlobject.h"
+#include "objstack.h"
+#include "yaep.h"
+#include "yaep_internal.h"
+
+#include <stdio.h>
+
+extern jmp_buf yaep_error_longjump_buff;
+
 /* The following vlos contain all syntax terminal and syntax rule
    structures. */
 #ifndef __cplusplus
@@ -129,6 +139,8 @@ extern int yyparse (void);
 
 %type <ref> trans
 %type <num> number
+
+%header
 
 %%
 
@@ -420,7 +432,7 @@ set_sgrammar (struct grammar *g, const char *grammar)
   int code = 256;
 
   ln = 1;
-  if ((code = setjmp (error_longjump_buff)) != 0)
+  if ((code = setjmp (yaep_error_longjump_buff)) != 0)
     {
       free_sgrammar ();
       return code;
